@@ -1,0 +1,35 @@
+(define units '(un duo tre quattuor quinqua se septe octo nove))
+(define units (map symbol->string units))
+(define tens '(dec vigint trigint quadragint quniquagint sexagint septuagint octogint nonagint))
+(define tens (map symbol->string tens))
+(define hundreds '(cent ducent trecent quadringent quingent sescent septingent octingent nongent))
+(define hundreds (map symbol->string hundreds))
+(define decimals '(zero one two three four five six seven eight nine))
+(define decimals (map symbol->string decimals))
+(define teens '(ten eleven twelve thirteen fourteen fifteen sixteen seventeen eighteen nineteen))
+(define teens (map symbol->string teens))
+(define human-tens '(ten twenty thirty forty fifty sixty seventy eighty ninety))
+(define human-tens (map symbol->string human-tens))
+(define human-prefixes '("m" "b" "tr" "quadr" "quint" "sext" "sept" "oct" "non"))
+
+(define (prefix n)
+  (let
+    ((k (quotient n 10)))
+    (cond
+      ((= k 0) (if (> n 0) (list-ref units (- n 1)) ""))
+      ((and (> k 0) (< k 10)) (string-append (prefix (modulo n 10)) (list-ref tens (- (quotient n 10) 1))))
+      ((>= k 10) (string-append (prefix (modulo n 100)) (list-ref hundreds (- (quotient n 100) 1)))))))
+(define (index e)
+  (let
+    ((k (modulo e 6))
+     (n (if (< e 60) (list-ref human-prefixes (quotient (- e 6) 6)) (prefix (quotient e 6)))))
+    (case k
+      ((0 1 2) (string-append n "illion"))
+      ((3 4 5) (string-append n "illiard")))))
+(define (number-block n i b)
+  (let*
+    ((num (number->string n))
+     (index (- (string-length num) i)))
+    (string->number (substring num index (+ index b)))))
+(define (human-number n) (let ((k (quotient n 10))) (cond ((= k 0) (list-ref decimals n)) ((= k 1) (list-ref teens (- n 10))) ((< k 10) (string-append (list-ref human-tens (- k 1)) (if (= 0 (modulo n 10)) "" (string-append "-" (list-ref decimals (- n (* 10 k))))))) ((< k 100) (string-append (human-number (quotient k 10)) " hundred" (if (> (modulo n 100) 0) (string-append " and " (human-number (modulo n 100))) ""))))))
+(define (name n) (let ((num (number->string n))) (cond ((< n 1000) (human-number n)) ((< n 1000000) (string-append (human-number (number-block n (string-length num) (- (string-length num) 3))) " thousand" (if (> (modulo n 1000) 0) (string-append " " (human-number (number-block n 3 3))) ""))) (else (string-append (human-number (number-block n (string-length num) (if (= 0 (modulo (string-length num) 3)) 3 (modulo (string-length num) 3)))) " " (index (- (string-length num) 1)) " " (name (string->number (substring num (if (= 0 (modulo (string-length num) 3)) 3 (modulo (string-length num) 3)) (string-length num)))))))))
